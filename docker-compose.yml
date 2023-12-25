@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  cinbot:
+    build:
+      context: .
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - KINOPOISK_API_KEY=${KINOPOISK_API_KEY}
