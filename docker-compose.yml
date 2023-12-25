@@ -7,3 +7,5 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
       - KINOPOISK_API_KEY=${KINOPOISK_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SEARCH_ENGINE_ID=${SEARCH_ENGINE_ID}

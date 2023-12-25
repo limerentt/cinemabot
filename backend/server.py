@@ -6,6 +6,9 @@ from aiogram.types import ParseMode
 from requests_handlers import (add_user, add_film, add_request,
                                last_searched_films, get_film_counts)
 
+GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
+SEARCH_ENGINE_ID = os.environ['SEARCH_ENGINE_ID']
+
 
 bot = Bot(token=os.environ['BOT_TOKEN'])
 dp = Dispatcher(bot)
@@ -32,21 +35,45 @@ async def find_random_movie_kinopoisk():
             return data
 
 
+async def get_first_google_search_result(query: str) -> str:
+    try:
+        async with aiohttp.ClientSession() as session:
+            url = f"https://www.googleapis.com/customsearch/v1"
+            params = {
+                'key': GOOGLE_API_KEY,
+                'cx': SEARCH_ENGINE_ID,
+                'q': query
+            }
+            async with session.get(url, params=params) as response:
+                data = await response.json()
+                return str(data['items'][1]['link'])
+
+    except Exception as e:
+        print(f"Error in Google Custom Search: {e}")
+
+    return "No results found"
+
+
 async def send_movie_with_response(response: dict, message: types.Message):
     response_text = (f"<b>Name:</b>\n{response['name']} ({response['year']})\n"
                      f"<b>Rating:</b>\nKinopoisk: <b>{response['rating']['kp']}</b>, "
                      f"IMDB: <b>{response['rating']['imdb']}</b>.\n"
                      f"<b>Description:</b>\n{response['description']}\n")
 
-    # keyboard = types.InlineKeyboardMarkup()
-    # url_button = types.InlineKeyboardButton(text="Watch on Kinopoisk",
-    #                                         url=f"https://hd.kinopoisk.ru/film/{response['externalId']['kpHD']}")
-    # keyboard.add(url_button)
-
     await bot.send_photo(chat_id=message.chat.id,
                          photo=response['poster']['url'],
                          caption=response_text,
                          parse_mode=ParseMode.HTML)
+
+    user = add_user(message)
+    film = add_film(response)
+    add_request(user, film, message.message_id)
+
+    film_name = response['name']
+    search_query = f"film {film_name}"
+    first_link = await get_first_google_search_result(search_query)
+
+    await bot.send_message(chat_id=message.chat.id, text=f"link: {first_link}")
 
 
 @dp.message_handler(commands=['start'])
@@ -121,7 +148,7 @@ async def send_films_counts(message: types.Message):
         await message.reply('You haven\'t searched yet', parse_mode=ParseMode.HTML)
         return
 
-    response_text = f"<b>Number of your requests per film:</b>\n"
+    response_text = "<b>Number of your requests per film:</b>\n"
     for film_name, film_count in film_counts.items():
         response_text += f"{film_name}: {film_count}\n"
 

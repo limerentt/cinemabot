@@ -65,11 +65,14 @@
    BOT_TOKEN=<your-bot-token>
    KINOPOISK_API_KEY=<your-kinopoisk-api-key>
    ```
+   
+3. Скачайте и настройти docker и docker-compose
 
-3. Запустите бота.
+4. Запустите бота.
 
    ```bash
-   docker-compose up --build -d
+   sudo chmod +x run.sh
+   ./run.sh
    ```
 
 ## Как найти

@@ -1,0 +1,4 @@
+docker
+docker-compose
+aiohttp
+aiogram==2.23.1
