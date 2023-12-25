@@ -6,6 +6,8 @@ from aiogram.types import ParseMode
 from requests_handlers import (add_user, add_film, add_request,
                                last_searched_films, get_film_counts)
 
+from exceptions import ServiceError
+
 GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
 SEARCH_ENGINE_ID = os.environ['SEARCH_ENGINE_ID']
 
@@ -38,7 +40,7 @@ async def find_random_movie_kinopoisk():
 async def get_first_google_search_result(query: str) -> str:
     try:
         async with aiohttp.ClientSession() as session:
-            url = f"https://www.googleapis.com/customsearch/v1"
+            url = "https://www.googleapis.com/customsearch/v1"
             params = {
                 'key': GOOGLE_API_KEY,
                 'cx': SEARCH_ENGINE_ID,
@@ -117,11 +119,14 @@ async def send_help(message: types.Message):
 
 @dp.message_handler(commands=['random'])
 async def send_random_movie(message: types.Message):
-    response = await find_random_movie_kinopoisk()
-    if not response:
-        await message.reply("I haven't found anything 🫣")
-        return
-    await send_movie_with_response(response, message)
+    try:
+        response = await find_random_movie_kinopoisk()
+        if not response:
+            await message.reply("I haven't found anything 🫣")
+            return
+        await send_movie_with_response(response, message)
+    except ServiceError:
+        await message.reply("Kinopoisk API not working. Please try again later.")
 
 
 @dp.message_handler(commands='history')
@@ -157,12 +162,15 @@ async def send_films_counts(message: types.Message):
 
 @dp.message_handler()
 async def send_movie(message: types.Message) -> None:
-    response = await find_movie_kinopoisk(message.text)
-    if not response.get('docs', []):
-        await message.reply("I haven\'t found anything🫣")
-        return
-    response = response['docs'][0]
-    await send_movie_with_response(response, message)
+    try:
+        response = await find_movie_kinopoisk(message.text)
+        if not response.get('docs', []):
+            await message.reply("I haven\'t found anything🫣")
+            return
+        response = response['docs'][0]
+        await send_movie_with_response(response, message)
+    except ServiceError:
+        await message.reply("Kinopoisk API not working. Please try again later.")
 
 
 if __name__ == "__main__":

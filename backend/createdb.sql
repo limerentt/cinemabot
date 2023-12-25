@@ -1,6 +1,6 @@
 create table films(
     film_id integer primary key,
-    film_name varchar(255),
+    film_name text,
     published_year int,
     description text,
     genre varchar(255),
